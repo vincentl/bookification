@@ -10,7 +10,8 @@ the audiobook.
 
 The process of ripping an audiobook you **own** on CD to a digital audiobook for
 Apple Books requires several pieces of software that are all available from
-[Homebrew](https://brew.sh/). First, install Homebrew and then
+[Homebrew](https://brew.sh/) or [CPAN](https://www.cpan.org/). First, install
+Homebrew and then
 
     brew install abcde
     brew install cd-discid
@@ -51,9 +52,9 @@ choose to *append* to the playlist.
 
 Once all the tracks are ready, run ``bookification`` with three options:
 
-  ``src``   - path to the album directory created by the ``abcde`` process
-  ``dst``   - path to store the final audiobook file
-  ``title`` - method for extracting the chapter titles from track titles
+    ``src``   - path to the album directory created by the ``abcde`` process
+    ``dst``   - path to store the final audiobook file
+    ``title`` - method for extracting the chapter titles from track titles
 
 The first two options are self-explanatory, but the ``title`` option requires
 some explanation. ``abcde``, by default, uses
@@ -86,18 +87,19 @@ comma Part number" portion of the track title. A regular expression explorer
 such as [pythex](https://pythex.org/) is a quick way to test out a regular
 expression against track titles.
 
-The ``abcde`` configuration file in this repo used ``~/Audio`` as the output
+The ``abcde`` configuration file in this repo uses ``~/Audio`` as the output
 directory for tracks. To bind _Harry Potter and the Deathly Hallows_ into a
 audiobook file, we
 
-1. work in a separate working directory, ``work``
-1. write to the subdirectory ``audiobook`` in the working directory
-1. include the default ``--title`` option for illustration 
+* work in a separate working directory, ``work``
+* write to the subdirectory ``audiobook`` in the working directory
+* include the default ``--title`` option for illustration 
 
-    cd ~/work/
-    path/to/bookification --src ~/Audio/m4a/J.K.\ Rowling\ read\ by\ Jim\ Dale/Harry\ Potter\ and\ the\ Deathly\ Hallows \
-                          --dst audiobook \
-                          --title='^(Chapter [0-9]+: )“(.*)”, Part [0-9]+$'
+    terminal> cd ~/work/
+    terminal> path/to/bookification \
+    --src ~/Audio/m4a/J.K.\ Rowling\ read\ by\ Jim\ Dale/Harry\ Potter\ and\ the\ Deathly\ Hallows \
+    --dst audiobook \
+    --title='^(Chapter [0-9]+: )“(.*)”, Part [0-9]+$'
 
 When finished, the subdirectory ``audiobook`` will contain temporary
 copies of all the track files as well as the final ``.m4b`` file.  Move
