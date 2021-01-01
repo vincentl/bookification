@@ -91,9 +91,11 @@ The ``abcde`` configuration file in this repo uses ``~/Audio`` as the output
 directory for tracks. To bind _Harry Potter and the Deathly Hallows_ into a
 audiobook file, we
 
-* work in a separate working directory, ``work``
-* write to the subdirectory ``audiobook`` in the working directory
-* include the default ``--title`` option for illustration 
+- work in a separate working directory, ``work``
+- write to the subdirectory ``audiobook`` in the working directory
+- include the default ``--title`` option for illustration
+
+using the commands 
 
     terminal% cd ~/work/
     terminal% path/to/bookification \
