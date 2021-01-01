@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+
+import subprocess
+import argparse
+import re
+import os
+
+def get_parts(src):
+  m4a   = []
+  m3u   = None
+  cover = None
+  with os.scandir(src) as it:
+    for entry in it:
+      if entry.name.endswith('.m4a'):
+        m4a += [entry.name]
+      elif entry.name.endswith('.m3u'):
+        m3u = entry.path
+      elif entry.name == 'albumart_backup':
+        cover = os.path.join(entry.path, 'cover.jpg')
+  return cover, m3u, m4a
+        
+parser = argparse.ArgumentParser()
+parser.add_argument('--src', help='src directory', required=True)
+parser.add_argument('--dst', help='dst directory', required=True)
+parser.add_argument('--title', help='re for chapter title', default='^(Chapter [0-9]+: )“(.*)”, Part [0-9]+$')
+options = parser.parse_args()
+
+if options.src == options.dst:
+  print('src and dst must be distinct')
+  sys.exit(1)
+
+os.mkdir(options.dst)
+
+cover, m3u, m4a = get_parts(options.src)
+
+
+chapter      = {}
+order        = []
+artwork_info = os.path.join(options.src, 'albumart_backup', 'cover.jpg')
+chapter_info = os.path.join(options.dst, 'chapters.txt')
+meta_info    = os.path.join(options.dst, 'meta.txt')
+concat_path  = os.path.join(options.dst, 'concat.m4a')
+chapter_path = os.path.join(options.dst, 'chapters.m4a')
+final_path   = os.path.join(options.dst, os.path.basename(m3u)[:-4] + '.m4b')
+meta         = None
+
+with open(m3u, 'r') as tracks, open(chapter_info, 'w') as io:
+  for path in tracks:
+    path = path.rstrip('\n')
+    src  = os.path.join(options.src, path)
+    dst  = os.path.join(options.dst, path)
+   
+    io.write(f"file '{path}'\n")
+    
+    # Remove cover art and store track in dst
+    subprocess.run(['AtomicParsley', src, '--artwork', 'REMOVE_ALL', '--output', dst])
+  
+    # Get track length with ffprobe
+    duration = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', dst], capture_output=True)
+    duration = float(duration.stdout)
+
+    # Get all metadata
+    probe = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format_tags=artist,album,date,encoder,iTunSMPB,title', '-of', 'default=noprint_wrappers=1', src], capture_output=True)
+ 
+    title = None
+    tag   = set()
+    for line in probe.stdout.decode().split('\n'):
+      tag.add(line[4:])
+      if line.startswith('TAG:title='):
+        title = line[10:]
+
+    if meta is None:
+      meta = tag
+    else:
+      meta = meta.intersection(tag)
+  
+    print(f'Track "{title}" has length {duration}')
+  
+    title = ''.join(i for i in re.search(options.title, title).groups() if i)
+    
+    if not title in chapter:
+      order          += [title]
+      chapter[title]  = duration
+    else:
+      chapter[title] += duration
+
+subprocess.run(['ffmpeg', '-f', 'concat', '-safe', '0', '-i', chapter_info, '-c', 'copy', concat_path])
+subprocess.run(['ffmpeg', '-i', concat_path, '-f', 'ffmetadata', meta_info])
+
+with open(meta_info, 'a') as io:
+  for item in meta:
+    io.write(f'{item}\n')
+  
+start = 1
+end   = 0
+with open(meta_info, 'a') as io:
+  for title in order:
+    duration  = chapter[title]
+    end      += duration
+    io.write('[CHAPTER]\n')
+    io.write(f'START={start*1e9:.0f}\n')
+    io.write(f'END={end*1e9:.0f}\n')
+    io.write(f'title={title}\n')
+    start = end + 1
+
+subprocess.run(['ffmpeg', '-i', concat_path, '-i', meta_info, '-map_metadata', '1', '-codec', 'copy', chapter_path])
+
+subprocess.run(['AtomicParsley', chapter_path, '--artwork', artwork_info, '--output', final_path])
+
+
