@@ -95,8 +95,8 @@ audiobook file, we
 * write to the subdirectory ``audiobook`` in the working directory
 * include the default ``--title`` option for illustration 
 
-    terminal> cd ~/work/
-    terminal> path/to/bookification \
+    terminal% cd ~/work/
+    terminal% path/to/bookification \
     --src ~/Audio/m4a/J.K.\ Rowling\ read\ by\ Jim\ Dale/Harry\ Potter\ and\ the\ Deathly\ Hallows \
     --dst audiobook \
     --title='^(Chapter [0-9]+: )“(.*)”, Part [0-9]+$'
